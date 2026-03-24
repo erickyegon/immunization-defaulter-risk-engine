@@ -1,0 +1,174 @@
+# Kenya Expanded Programme on Immunization (EPI) Schedule
+# Age thresholds in months for vaccine eligibility
+
+vaccines:
+  has_bcg:
+    min_age_months: 0
+    max_age_months: 999  # birth vaccine — always expected
+    label: "BCG"
+    schedule_group: "birth"
+
+  has_opv_0:
+    min_age_months: 0
+    max_age_months: 999
+    label: "OPV-0 (Birth Polio)"
+    schedule_group: "birth"
+
+  has_opv_1:
+    min_age_months: 6
+    max_age_months: 999
+    label: "OPV-1"
+    schedule_group: "6_weeks"
+
+  has_opv_2:
+    min_age_months: 10
+    max_age_months: 999
+    label: "OPV-2"
+    schedule_group: "10_weeks"
+
+  has_opv_3:
+    min_age_months: 14
+    max_age_months: 999
+    label: "OPV-3"
+    schedule_group: "14_weeks"
+
+  has_pcv_1:
+    min_age_months: 6
+    max_age_months: 999
+    label: "PCV-1"
+    schedule_group: "6_weeks"
+
+  has_pcv_2:
+    min_age_months: 10
+    max_age_months: 999
+    label: "PCV-2"
+    schedule_group: "10_weeks"
+
+  has_pcv_3:
+    min_age_months: 14
+    max_age_months: 999
+    label: "PCV-3"
+    schedule_group: "14_weeks"
+
+  has_penta_1:
+    min_age_months: 6
+    max_age_months: 999
+    label: "Penta-1 (DPT-HepB-Hib)"
+    schedule_group: "6_weeks"
+
+  has_penta_2:
+    min_age_months: 10
+    max_age_months: 999
+    label: "Penta-2"
+    schedule_group: "10_weeks"
+
+  has_penta_3:
+    min_age_months: 14
+    max_age_months: 999
+    label: "Penta-3"
+    schedule_group: "14_weeks"
+
+  has_ipv:
+    min_age_months: 14
+    max_age_months: 999
+    label: "IPV (Injectable Polio)"
+    schedule_group: "14_weeks"
+
+  has_rota_1:
+    min_age_months: 6
+    max_age_months: 999
+    label: "Rota-1"
+    schedule_group: "6_weeks"
+
+  has_rota_2:
+    min_age_months: 10
+    max_age_months: 999
+    label: "Rota-2"
+    schedule_group: "10_weeks"
+
+  has_rota_3:
+    min_age_months: 14
+    max_age_months: 999
+    label: "Rota-3"
+    schedule_group: "14_weeks"
+
+  has_measles_9_months:
+    min_age_months: 9
+    max_age_months: 999
+    label: "Measles-Rubella (MR1)"
+    schedule_group: "9_months"
+
+  has_measles_18_months:
+    min_age_months: 18
+    max_age_months: 999
+    label: "Measles-Rubella (MR2)"
+    schedule_group: "18_months"
+
+  # Malaria vaccine — endemic regions only
+  has_malaria_6_vaccine:
+    min_age_months: 5
+    max_age_months: 999
+    label: "Malaria-1 (R21)"
+    schedule_group: "malaria_endemic"
+    endemic_only: true
+
+  has_malaria_7_vaccine:
+    min_age_months: 6
+    max_age_months: 999
+    label: "Malaria-2 (R21)"
+    schedule_group: "malaria_endemic"
+    endemic_only: true
+
+  has_malaria_8_vaccine:
+    min_age_months: 7
+    max_age_months: 999
+    label: "Malaria-3 (R21)"
+    schedule_group: "malaria_endemic"
+    endemic_only: true
+
+  has_malaria_24_vaccine:
+    min_age_months: 24
+    max_age_months: 999
+    label: "Malaria Booster (R21)"
+    schedule_group: "malaria_endemic"
+    endemic_only: true
+
+# Vitamin A supplementation schedule
+vitamin_a:
+  doses:
+    - {column: "has_vitamin_a_6_months",  min_age_months: 6}
+    - {column: "has_vitamin_a_12_months", min_age_months: 12}
+    - {column: "has_vitamin_a_18_months", min_age_months: 18}
+    - {column: "has_vitamin_a_24_months", min_age_months: 24}
+    - {column: "has_vitamin_a_30_months", min_age_months: 30}
+    - {column: "has_vitamin_a_36_months", min_age_months: 36}
+    - {column: "has_vitamin_a_42_months", min_age_months: 42}
+    - {column: "has_vitamin_a_48_months", min_age_months: 48}
+    - {column: "has_vitamin_a_54_months", min_age_months: 54}
+    - {column: "has_vitamin_a_60_months", min_age_months: 60}
+
+# Core vaccines (non-endemic — always expected)
+core_vaccines:
+  - has_bcg
+  - has_opv_0
+  - has_opv_1
+  - has_opv_2
+  - has_opv_3
+  - has_pcv_1
+  - has_pcv_2
+  - has_pcv_3
+  - has_penta_1
+  - has_penta_2
+  - has_penta_3
+  - has_ipv
+  - has_rota_1
+  - has_rota_2
+  - has_rota_3
+  - has_measles_9_months
+  - has_measles_18_months
+
+malaria_vaccines:
+  - has_malaria_6_vaccine
+  - has_malaria_7_vaccine
+  - has_malaria_8_vaccine
+  - has_malaria_24_vaccine

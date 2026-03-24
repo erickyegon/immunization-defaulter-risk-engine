@@ -1,0 +1,7 @@
+paths:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+  outputs: data/outputs
+  models: models
+  reports: reports

@@ -3,8 +3,7 @@
 ### Production ML Pipeline · XGBoost + SHAP · FastAPI · PostgreSQL · Kenya CHW Platform
 
 > **Dr. Erick Kiprotich Yegon, PhD (Epidemiology)**
-> AI & Data Science Consultant · Former Global Director of Data Science, Living Goods
-> 17+ years in global health analytics · 30+ peer-reviewed publications · h-index 10
+> AI & Data Science Consultant 
 > `github.com/erickyegon` · Richmond, KY · EB-1A Permanent Resident
 
 ---
@@ -67,7 +66,7 @@ This engine solves that with a **real-time, explainable risk score** delivered t
 | 0.60 | 232 | 64.7% | 66.4% | 0.655 |
 | 0.70 | 167 | 73.7% | 54.4% | 0.626 |
 
-*Operational recommendation: threshold = 0.50 maximises F1 and flags ~4.5% of the population per monthly cycle.*
+*Operational note: threshold = 0.50 maximises F1. For CHW deployment where missing a defaulter has consequences, threshold = 0.30–0.35 raises recall to 88–94% at ~7% flag rate — this decision should be made jointly with program staff.*
 
 ---
 
@@ -105,13 +104,13 @@ Every prediction is decomposed into plain-English per-patient drivers using Tree
 | 1 | Child's age (months) | **0.749** | Child biology |
 | 2 | Months since last CHW contact | **0.555** | Engagement |
 | 3 | Penta 1-2-3 series complete | **0.434** | Vaccine history |
-| 4 | Delayed developmental milestones | 0.321 | Clinical flag |
-| 5 | Overall vaccine completeness (all) | 0.228 | Vaccine history |
-| 6 | Doses currently outstanding | 0.203 | Operational |
-| 7 | Vitamin A completeness | 0.193 | Nutrition |
-| 8 | Core vaccine completeness score | 0.109 | Vaccine history |
-| 9 | OPV 1-2-3 series complete | 0.098 | Vaccine history |
-| 10 | Total vaccines received | 0.078 | Vaccine history |
+| 4 | Overall vaccine completeness (all) | 0.228 | Vaccine history |
+| 5 | Doses currently outstanding | 0.203 | Operational |
+| 6 | Vitamin A completeness | 0.193 | Nutrition |
+| 7 | Core vaccine completeness score | 0.109 | Vaccine history |
+| 8 | OPV 1-2-3 series complete | 0.098 | Vaccine history |
+| 9 | Total vaccines received | 0.078 | Vaccine history |
+| 10 | CHW has PPE | 0.074 | CHW quality |
 
 *Age and recency of CHW contact are the dominant signals — consistent with epidemiological priors.*
 
@@ -153,7 +152,7 @@ PostgreSQL (12 tables · 11M+ rows in operational tables)
 │  Step 5:  CHW supervision quality    (30% match)            │
 │  Step 6:  Population workload        (100% match)           │
 │  Step 7:  Home visit frequency       (100% match)           │
-│  Step 8:  Maternal ANC health-seeking                       │
+│  Step 8:  Maternal ANC health-seeking (area-level join)     │
 │  Step 9:  PNC label audit (ground truth validation)         │
 │  Step 10: Final validation + dtype enforcement              │
 │  Output: 6,864 patients × 154 columns · Parquet             │
@@ -188,11 +187,11 @@ PostgreSQL (12 tables · 11M+ rows in operational tables)
               ▼                 ▼
   ┌─────────────────┐  ┌──────────────────────┐
   │  FastAPI        │  │  Drift Monitor        │
-  │  POST /predict  │  │  PSI drift detection  │
+  │  POST /predict  │  │  PSI feature drift    │
   │  POST /predict/ │  │  Label shift tracking │
-  │       batch     │  │  40/44 features RED   │
-  │  GET  /health   │  │  (train/test split    │
-  │  GET  /model/   │  │   artefact — expected)│
+  │       batch     │  │  Near-constant feats  │
+  │  GET  /health   │  │  excluded from PSI    │
+  │  GET  /model/   │  │  (correct binning)    │
   │       info      │  └──────────────────────┘
   └─────────────────┘
 ```
@@ -400,5 +399,3 @@ Former Global Director of Data Science & Analytics, Living Goods (8.5M+ individu
 30+ peer-reviewed publications · h-index 10 · EB-1A Permanent Resident
 
 `github.com/erickyegon` · Richmond, KY
-#   i m m u n i z a t i o n - d e f a u l t e r - r i s k - e n g i n e  
- 

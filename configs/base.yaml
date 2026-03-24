@@ -1,0 +1,8 @@
+project_name: immunization_defaulter_risk_engine
+random_state: 42
+prediction_horizon_days: 30
+grace_window_days: 30
+min_child_age_days: 0
+max_child_age_days: 1825
+cohort_frequency: month
+default_timezone: Africa/Nairobi

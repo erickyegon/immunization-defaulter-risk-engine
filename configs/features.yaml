@@ -1,0 +1,26 @@
+child_features:
+  - sex
+  - age_days
+  - age_band
+  - num_received_vaccines
+  - num_due_vaccines_rebuilt
+  - num_overdue_vaccines
+  - prior_follow_up_flag_count
+  - prior_default_flag_count
+  - days_since_last_iz_event
+chw_context_features:
+  - supervision_events_last_90d
+  - days_since_last_supervision
+  - mean_immunization_score_90d
+  - pct_tools_available_90d
+  - homevisit_count_30d
+area_context_features:
+  - u2_population_context
+  - u5_population_context
+  - county_clean
+  - sub_county_clean
+quality_features:
+  - county_valid_flag
+  - age_consistency_flag
+  - gps_reliable_flag
+  - row_missingness_pct

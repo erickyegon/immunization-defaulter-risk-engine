@@ -1,0 +1,35 @@
+{
+  "patient_id": "c1624339-4307-4fdc-89c6-5aef8ab924ec",
+  "patient_name": "Davin Joshua Okello",
+  "risk_score": 0.5991,
+  "risk_pct": 59.9,
+  "risk_tier": "MEDIUM",
+  "top_drivers": [
+    {
+      "feature": "patient_age_in_months",
+      "friendly_name": "Child's age (months)",
+      "feature_value": 9.0,
+      "shap_value": 0.5125,
+      "direction": "increases_risk",
+      "plain_english": "Child is 9 months old \u2014 age context increases defaulter risk"
+    },
+    {
+      "feature": "months_since_reported",
+      "friendly_name": "Months since last CHW contact",
+      "feature_value": 12.1879,
+      "shap_value": -0.3658,
+      "direction": "decreases_risk",
+      "plain_english": "Last CHW contact was 12.2 month(s) ago \u2014 this reduces defaulter risk"
+    },
+    {
+      "feature": "has_delayed_milestones_binary",
+      "friendly_name": "has_delayed_milestones_binary",
+      "feature_value": 17.0,
+      "shap_value": -0.2344,
+      "direction": "decreases_risk",
+      "plain_english": "has_delayed_milestones_binary value=17.00 reduces defaulter risk"
+    }
+  ],
+  "recommended_action": "Prioritise within-month home visit. Review vaccine card.",
+  "model_version": "xgb_v1.0_iz_defaulter"
+}

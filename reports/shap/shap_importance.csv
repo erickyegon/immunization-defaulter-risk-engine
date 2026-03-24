@@ -1,0 +1,45 @@
+feature,friendly_name,mean_shap
+patient_age_in_months,Child's age (months),0.74892366
+months_since_reported,Months since last CHW contact,0.55536103
+penta_series_complete,Penta 1-2-3 series complete,0.4335067
+has_delayed_milestones_binary,has_delayed_milestones_binary,0.32110313
+vax_completeness_all,vax_completeness_all,0.22813359
+due_count_clean,Doses currently outstanding,0.20303756
+vitamin_a_completeness,vitamin_a_completeness,0.19287317
+vax_completeness_score,Overall vaccine completeness,0.10922015
+opv_series_complete,opv_series_complete,0.09746476
+vax_received_total,vax_received_total,0.077472605
+chw_has_ppe,chw_has_ppe,0.07441321
+patient_sex_binary,Child's sex (male),0.07330236
+chw_workload_u2,Under-2 children per CHW area,0.067358494
+pcv_series_complete,pcv_series_complete,0.046553254
+has_pcv_1,has_pcv_1,0.04490507
+age_expected_vaccine_count,age_expected_vaccine_count,0.035977196
+has_opv_3,has_opv_3,0.033651374
+vax_received_core,vax_received_core,0.028559955
+has_rota_3,has_rota_3,0.026975695
+is_malaria_endemic_binary,is_malaria_endemic_binary,0.024465062
+has_bcg,has_bcg,0.020664638
+maternal_anc_visits,Mother's ANC visits attended,0.013685061
+chw_overall_assessment_pct,chw_overall_assessment_pct,0.011548467
+has_opv_0,has_opv_0,0.01106127
+has_opv_1,has_opv_1,0.010344572
+has_opv_2,has_opv_2,0.008082829
+has_measles_18_months,Measles-Rubella MR2 received,0.00747842
+chw_supervision_frequency,CHW supervision visits (count),0.0065221926
+measles_booster_gap,Missed measles booster (18-month),0.0061016665
+chw_has_all_tools,CHW has all required tools,0.0055510825
+has_ipv,has_ipv,0.0005700424
+chw_immunization_competency_pct,CHW immunization knowledge score,0.00040000243
+is_growth_monitoring_binary,Enrolled in growth monitoring,0.00022328972
+rota_series_complete,rota_series_complete,0.0
+has_pcv_3,has_pcv_3,0.0
+has_pcv_2,has_pcv_2,0.0
+has_penta_2,Penta-2 received,0.0
+has_penta_1,Penta-1 received,0.0
+has_rota_1,has_rota_1,0.0
+has_rota_2,has_rota_2,0.0
+has_measles_9_months,Measles-Rubella MR1 received,0.0
+has_penta_3,Penta-3 received,0.0
+monthly_homevisit_rate,Monthly home visit rate in area,0.0
+months_since_last_supervision,months_since_last_supervision,0.0

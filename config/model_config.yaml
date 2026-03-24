@@ -1,0 +1,150 @@
+# ─── Data ────────────────────────────────────────────────────────────────────
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  # Datasource: 'csv' uses local files; 'postgres' uses POSTGRES_* env vars
+  source: "postgres"
+
+# ─── Target ──────────────────────────────────────────────────────────────────
+target:
+  column: "is_defaulter"
+  # Composite definition — any of these triggers positive label
+  components:
+    - "needs_follow_up_yes"
+    - "due_count_positive"
+    - "vaccines_due_missed_flag"
+
+# ─── Feature Domains ─────────────────────────────────────────────────────────
+features:
+  child:
+    - patient_age_in_months
+    - patient_sex_binary
+    - vax_completeness_score
+    - vax_completeness_core_only
+    - age_expected_vaccine_count
+    - due_count_clean
+    - is_malaria_endemic
+    - vitamin_a_completeness
+    - is_growth_monitoring
+    - has_delayed_milestones
+    - penta_1_received
+    - penta_2_received
+    - penta_3_received
+    - measles_9m_received
+    - measles_18m_received
+    - measles_booster_gap
+    - months_since_reported
+    - penta_series_complete
+    - opv_series_complete
+    - pcv_series_complete
+    - rota_series_complete
+
+  chw:
+    - chw_immunization_competency_pct
+    - chw_overall_assessment_pct
+    - chw_supervision_frequency
+    - chw_has_all_tools
+    - chw_has_ppe
+    - chw_workload_u2
+    - months_since_last_supervision
+
+  engagement:
+    - monthly_homevisit_rate
+    - maternal_anc_visits
+    - maternal_anc_defaulter
+    - maternal_muac_risk
+    - household_on_fp
+
+  geographic:
+    - sub_county_encoded
+    - county_encoded
+
+# ─── Preprocessing ────────────────────────────────────────────────────────────
+preprocessing:
+  numeric_imputer: "median"
+  categorical_imputer: "most_frequent"
+  scale_features: false  # XGBoost does not need scaling; SHAP kernel does
+
+# ─── Model ───────────────────────────────────────────────────────────────────
+model:
+  name: "xgboost_iz_defaulter"
+  algorithm: "XGBClassifier"
+  base_params:
+    n_estimators: 500
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    min_child_weight: 5
+    gamma: 0.1
+    reg_alpha: 0.1
+    reg_lambda: 1.0
+    eval_metric: ["logloss", "aucpr"]
+    early_stopping_rounds: 50
+    use_label_encoder: false
+    random_state: 42
+    n_jobs: -1
+
+# ─── Tuning ──────────────────────────────────────────────────────────────────
+tuning:
+  enabled: true
+  n_trials: 50
+  optimize_metric: "average_precision"  # PR-AUC
+  cv_folds: 5
+  param_space:
+    n_estimators: [100, 600]
+    max_depth: [3, 8]
+    learning_rate: [0.01, 0.3]
+    subsample: [0.6, 1.0]
+    colsample_bytree: [0.5, 1.0]
+    min_child_weight: [1, 10]
+    gamma: [0.0, 1.0]
+    reg_alpha: [0.0, 1.0]
+    reg_lambda: [0.5, 2.0]
+
+# ─── Calibration ─────────────────────────────────────────────────────────────
+calibration:
+  enabled: true
+  method: "isotonic"  # or 'sigmoid'
+  cv: 5
+
+# ─── Evaluation ──────────────────────────────────────────────────────────────
+evaluation:
+  thresholds:
+    min_pr_auc: 0.50          # alert if PR-AUC drops below this (retrain signal)
+    min_roc_auc: 0.65
+    min_precision_at_20pct: 0.40
+    max_expected_calibration_error: 0.15
+    max_auc_gap_by_sex: 0.10
+  test_size: 0.20
+  stratified: true
+
+# ─── SHAP ────────────────────────────────────────────────────────────────────
+shap:
+  n_background_samples: 100
+  max_display: 20
+  output_dir: "reports/shap"
+
+# ─── MLflow ──────────────────────────────────────────────────────────────────
+mlflow:
+  experiment_name: "iz_defaulter_prediction"
+  # sqlite backend avoids the filesystem deprecation warning (FutureWarning, Feb 2026)
+  tracking_uri: "sqlite:///mlflow.db"
+  log_artifacts: true
+  register_model: true
+  model_registry_name: "iz_defaulter_xgboost"
+
+# ─── API ─────────────────────────────────────────────────────────────────────
+api:
+  host: "0.0.0.0"
+  port: 8000
+  top_shap_drivers: 3
+  risk_tiers:
+    low:    [0.0, 0.33]
+    medium: [0.33, 0.60]
+    high:   [0.60, 1.01]
+
+# ─── Monitoring ──────────────────────────────────────────────────────────────
+monitoring:
+  psi_threshold: 0.2       # PSI > 0.2 triggers drift alert
+  auc_drop_threshold: 0.05 # Drop > 5pp triggers retraining alert

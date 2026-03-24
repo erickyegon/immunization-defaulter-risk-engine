@@ -1,0 +1,15 @@
+postgres:
+  host_env: POSTGRES_HOST
+  port_env: POSTGRES_PORT
+  db_env: POSTGRES_DB
+  user_env: POSTGRES_USER
+  password_env: POSTGRES_PASSWORD
+  schema_env: POSTGRES_SCHEMA
+  pool_pre_ping: true
+  echo: false
+source_tables:
+  iz: iz
+  supervision: supervision
+  active_chps: active_chps
+  homevisit: homevisit
+  population: population

@@ -1,0 +1,19 @@
+schedule_name: kenya_child_schedule_v1
+horizon_days: 30
+grace_days: 30
+required_vaccines:
+  bcg: 0
+  opv_0: 0
+  opv_1: 42
+  opv_2: 70
+  opv_3: 98
+  penta_1: 42
+  penta_2: 70
+  penta_3: 98
+  pcv_1: 42
+  pcv_2: 70
+  pcv_3: 98
+  rota_1: 42
+  rota_2: 70
+  ipv: 98
+  measles_9_months: 270

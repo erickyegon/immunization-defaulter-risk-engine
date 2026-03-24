@@ -1,0 +1,18 @@
+train:
+  target: default_30d
+  id_columns: [child_key, index_month]
+  time_column: index_month
+  validation_months: 2
+  test_months: 2
+xgboost:
+  objective: binary:logistic
+  eval_metric: aucpr
+  max_depth: 4
+  learning_rate: 0.05
+  n_estimators: 300
+  subsample: 0.9
+  colsample_bytree: 0.9
+  reg_lambda: 2.0
+thresholding:
+  strategy: recall_at_top_k
+  top_k_fraction: 0.2

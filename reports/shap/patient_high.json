@@ -1,0 +1,35 @@
+{
+  "patient_id": "4af6d46f-a4f2-4b67-a0ee-ef693b657be3",
+  "patient_name": "Jehumorgan   Okello",
+  "risk_score": 0.9983,
+  "risk_pct": 99.8,
+  "risk_tier": "HIGH",
+  "top_drivers": [
+    {
+      "feature": "due_count_clean",
+      "friendly_name": "Doses currently outstanding",
+      "feature_value": 3.0,
+      "shap_value": 4.7016,
+      "direction": "increases_risk",
+      "plain_english": "Child has 3 outstanding vaccine dose(s) \u2014 this increases defaulter risk"
+    },
+    {
+      "feature": "patient_sex_binary",
+      "friendly_name": "Child's sex (male)",
+      "feature_value": 12.0,
+      "shap_value": 0.6049,
+      "direction": "increases_risk",
+      "plain_english": "Child's sex (male) value=12.00 increases defaulter risk"
+    },
+    {
+      "feature": "has_delayed_milestones_binary",
+      "friendly_name": "has_delayed_milestones_binary",
+      "feature_value": 18.0,
+      "shap_value": 0.5171,
+      "direction": "increases_risk",
+      "plain_english": "has_delayed_milestones_binary value=18.00 increases defaulter risk"
+    }
+  ],
+  "recommended_action": "Immediate home visit required. Bring vaccine referral form. Check outstanding doses and arrange facility referral.",
+  "model_version": "xgb_v1.0_iz_defaulter"
+}
