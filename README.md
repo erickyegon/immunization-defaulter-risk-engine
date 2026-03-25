@@ -2,6 +2,10 @@
 
 ### Production ML Pipeline · XGBoost + SHAP · FastAPI · PostgreSQL · Kenya CHW Platform
 
+[![Live App](https://img.shields.io/badge/Live%20App-immunizationengine.streamlit.app-FF4B4B?logo=streamlit&logoColor=white)](https://immunizationengine.streamlit.app/)
+
+> **Try it live:** [https://immunizationengine.streamlit.app/](https://immunizationengine.streamlit.app/)
+
 ---
 
 ## The Problem
@@ -392,6 +396,10 @@ uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 ```
 
 ### 6. Launch Streamlit dashboard
+
+**Hosted:** [https://immunizationengine.streamlit.app/](https://immunizationengine.streamlit.app/)
+
+**Local:**
 ```bash
 streamlit run streamlit_app.py
 # Opens at http://localhost:8501
