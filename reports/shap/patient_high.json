@@ -1,33 +1,33 @@
 {
-  "patient_id": "4af6d46f-a4f2-4b67-a0ee-ef693b657be3",
-  "patient_name": "Jehumorgan   Okello",
-  "risk_score": 0.9971,
-  "risk_pct": 99.7,
+  "patient_id": "7350864c-f989-4858-a090-e34e87c59ab0",
+  "patient_name": "Benjamin  Okodoi",
+  "risk_score": 0.9979,
+  "risk_pct": 99.8,
   "risk_tier": "HIGH",
   "top_drivers": [
     {
       "feature": "due_count_clean",
       "friendly_name": "Doses currently outstanding",
-      "feature_value": 3.0,
-      "shap_value": 4.5923,
+      "feature_value": 2.0,
+      "shap_value": 5.4499,
       "direction": "increases_risk",
-      "plain_english": "Child has 3 outstanding vaccine dose(s) \u2014 this increases defaulter risk"
+      "plain_english": "Child has 2 outstanding vaccine dose(s) \u2014 this increases defaulter risk"
     },
     {
-      "feature": "has_delayed_milestones_binary",
-      "friendly_name": "has_delayed_milestones_binary",
-      "feature_value": 18.0,
-      "shap_value": 0.5452,
+      "feature": "penta_series_complete",
+      "friendly_name": "Penta 1-2-3 series complete",
+      "feature_value": 460.5714,
+      "shap_value": 0.9164,
       "direction": "increases_risk",
-      "plain_english": "has_delayed_milestones_binary value=18.00 increases defaulter risk"
+      "plain_english": "Penta 1-2-3 series complete value=460.57 increases defaulter risk"
     },
     {
-      "feature": "patient_sex_binary",
-      "friendly_name": "Child's sex (male)",
-      "feature_value": 12.0,
-      "shap_value": 0.4177,
-      "direction": "increases_risk",
-      "plain_english": "Child's sex (male) value=12.00 increases defaulter risk"
+      "feature": "patient_age_in_months",
+      "friendly_name": "Child's age (months)",
+      "feature_value": 6.0,
+      "shap_value": -0.3096,
+      "direction": "decreases_risk",
+      "plain_english": "Child is 6 months old \u2014 age context reduces defaulter risk"
     }
   ],
   "recommended_action": "Immediate home visit required. Bring vaccine referral form. Check outstanding doses and arrange facility referral.",

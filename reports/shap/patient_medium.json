@@ -1,33 +1,33 @@
 {
-  "patient_id": "b5e70154-439c-4121-a721-096087276305",
-  "patient_name": "Riche  Michael",
-  "risk_score": 0.5995,
-  "risk_pct": 60.0,
+  "patient_id": "52a639ef-b3c1-4c72-9e22-b2fe48bbba7f",
+  "patient_name": "Edwin Mark Omondi",
+  "risk_score": 0.5962,
+  "risk_pct": 59.6,
   "risk_tier": "MEDIUM",
   "top_drivers": [
     {
+      "feature": "vax_received_total",
+      "friendly_name": "vax_received_total",
+      "feature_value": 19.0,
+      "shap_value": 0.8264,
+      "direction": "increases_risk",
+      "plain_english": "vax_received_total value=19.00 increases defaulter risk"
+    },
+    {
       "feature": "penta_series_complete",
       "friendly_name": "Penta 1-2-3 series complete",
-      "feature_value": 272.5714,
-      "shap_value": 1.028,
-      "direction": "increases_risk",
-      "plain_english": "Penta 1-2-3 series complete value=272.57 increases defaulter risk"
-    },
-    {
-      "feature": "has_delayed_milestones_binary",
-      "friendly_name": "has_delayed_milestones_binary",
-      "feature_value": 49.0,
-      "shap_value": 0.6344,
-      "direction": "increases_risk",
-      "plain_english": "has_delayed_milestones_binary value=49.00 increases defaulter risk"
-    },
-    {
-      "feature": "patient_age_in_months",
-      "friendly_name": "Child's age (months)",
-      "feature_value": 13.0,
-      "shap_value": -0.6061,
+      "feature_value": 639.8571,
+      "shap_value": -0.4801,
       "direction": "decreases_risk",
-      "plain_english": "Child is 13 months old \u2014 age context reduces defaulter risk"
+      "plain_english": "Penta 1-2-3 series complete value=639.86 reduces defaulter risk"
+    },
+    {
+      "feature": "months_since_reported",
+      "friendly_name": "Months since last CHW contact",
+      "feature_value": 13.1406,
+      "shap_value": -0.3835,
+      "direction": "decreases_risk",
+      "plain_english": "Last CHW contact was 13.1 month(s) ago \u2014 this reduces defaulter risk"
     }
   ],
   "recommended_action": "Prioritise within-month home visit. Review vaccine card.",

@@ -1,33 +1,33 @@
 {
-  "patient_id": "e42b6106-c32f-4a4a-8f96-89d5bd9d95e6",
-  "patient_name": "Promise  Ushindi",
-  "risk_score": 0.3296,
+  "patient_id": "c905e2bc-b35b-4f02-b801-ed30fe21fcd9",
+  "patient_name": "Cevel  Jeyson",
+  "risk_score": 0.3298,
   "risk_pct": 33.0,
   "risk_tier": "LOW",
   "top_drivers": [
     {
-      "feature": "months_since_reported",
-      "friendly_name": "Months since last CHW contact",
-      "feature_value": 12.8778,
-      "shap_value": -0.8211,
-      "direction": "decreases_risk",
-      "plain_english": "Last CHW contact was 12.9 month(s) ago \u2014 this reduces defaulter risk"
-    },
-    {
-      "feature": "penta_series_complete",
-      "friendly_name": "Penta 1-2-3 series complete",
-      "feature_value": 649.5714,
-      "shap_value": -0.7732,
-      "direction": "decreases_risk",
-      "plain_english": "Penta 1-2-3 series complete value=649.57 reduces defaulter risk"
-    },
-    {
       "feature": "patient_age_in_months",
       "friendly_name": "Child's age (months)",
-      "feature_value": 53.0,
-      "shap_value": 0.6544,
+      "feature_value": 59.0,
+      "shap_value": 1.5343,
       "direction": "increases_risk",
-      "plain_english": "Child is 53 months old \u2014 age context increases defaulter risk"
+      "plain_english": "Child is 59 months old \u2014 age context increases defaulter risk"
+    },
+    {
+      "feature": "vitamin_a_completeness",
+      "friendly_name": "vitamin_a_completeness",
+      "feature_value": 0.8889,
+      "shap_value": -1.2831,
+      "direction": "decreases_risk",
+      "plain_english": "vitamin_a_completeness value=0.89 reduces defaulter risk"
+    },
+    {
+      "feature": "vax_completeness_all",
+      "friendly_name": "vax_completeness_all",
+      "feature_value": 0.9412,
+      "shap_value": -0.8874,
+      "direction": "decreases_risk",
+      "plain_english": "vax_completeness_all value=0.94 reduces defaulter risk"
     }
   ],
   "recommended_action": "Routine follow-up at next scheduled visit.",
