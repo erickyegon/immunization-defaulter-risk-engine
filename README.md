@@ -423,16 +423,18 @@ streamlit run streamlit_app.py
 
 The dashboard requires a password at login. Two roles are pre-configured:
 
-| Role | Default Password | Access |
-|---|---|---|
-| **User** | `Kenya` | Programme Dashboard · Patient Risk Scorer |
-| **Administrator** | `Kenya2025` | All pages · Live PostgreSQL toggle · Drift Monitor · Model Performance |
+| Role | Access |
+|---|---|
+| **User** | Programme Dashboard · Patient Risk Scorer |
+| **Administrator** | All pages · Live PostgreSQL toggle · Drift Monitor · Model Performance |
 
-To change passwords without editing code, set environment variables in `.env`:
+Passwords are set via environment variables — not hardcoded. Configure them in `.env` before deployment:
 ```bash
-ADMIN_PASSWORD=your_new_admin_password
-USER_PASSWORD=your_new_user_password
+ADMIN_PASSWORD=your_admin_password
+USER_PASSWORD=your_user_password
 ```
+
+> **Credential hygiene note:** The hosted demo uses example credentials suitable only for portfolio demonstration. Any deployment against real patient data must use strong, unique passwords set in `.env` and excluded from version control via `.gitignore`.
 
 ### 7. Docker
 ```bash
