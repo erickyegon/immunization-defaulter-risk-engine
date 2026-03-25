@@ -2,10 +2,6 @@
 
 ### Production ML Pipeline · XGBoost + SHAP · FastAPI · PostgreSQL · Kenya CHW Platform
 
-> **Dr. Erick Kiprotich Yegon, PhD (Epidemiology)**
-> AI & Data Science Consultant 
-> `github.com/erickyegon` · Richmond, KY · EB-1A Permanent Resident
-
 ---
 
 ## The Problem
@@ -160,21 +156,26 @@ Every prediction is decomposed into plain-English per-patient drivers using Tree
 
 ### Top 10 Features by Mean |SHAP|
 
-| Rank | Feature | SHAP | Domain |
-|---|---|---|---|
-| 1 | Child's age (months) | **0.726** | Child biology |
-| 2 | Months since last CHW contact | **0.515** | Engagement |
-| 3 | Penta 1-2-3 series complete | **0.398** | Vaccine history |
-| 4 | Overall vaccine completeness (all) | 0.211 | Vaccine history |
-| 5 | Doses currently outstanding | 0.200 | Operational |
-| 6 | Vitamin A completeness | 0.178 | Nutrition |
-| 7 | Core vaccine completeness score | 0.116 | Vaccine history |
-| 8 | OPV 1-2-3 series complete | 0.093 | Vaccine history |
-| 9 | Under-2 children per CHW area | 0.067 | CHW workload |
+| Rank | Feature | SHAP | Domain | Note |
+|---|---|---|---|---|
+| 1 | Child's age (months) | **0.726** | Child biology | |
+| 2 | Months since last CHW contact | **0.515** | Engagement | |
+| 3 | Penta 1-2-3 series complete | **0.398** | Vaccine history | |
+| 4 | *(unresolved — label under investigation)* | **0.303** | Unknown | ⚠️ see note |
+| 5 | Overall vaccine completeness (all) | 0.211 | Vaccine history | |
+| 6 | Doses currently outstanding | 0.200 | Operational | |
+| 7 | Vitamin A completeness | 0.178 | Nutrition | |
+| 8 | Core vaccine completeness score | 0.116 | Vaccine history | |
+| 9 | OPV 1-2-3 series complete | 0.093 | Vaccine history | |
+| 10 | Under-2 children per CHW area | 0.067 | CHW workload | |
 
-*Age and recency of CHW contact are the dominant signals — consistent with epidemiological priors. Features 1–3 alone account for 60% of the total mean |SHAP| across the top 9.*
+*Age and recency of CHW contact are the dominant signals — consistent with epidemiological priors.*
 
-*Note: 6 maternal/milestone features (growth monitoring, ANC visits, MUAC) are not yet available due to a 0% maternal join rate; model performance is expected to improve further once preg_reg CHW-area linkage is resolved.*
+**⚠️ Rank 4 feature label:** The SHAP explainer reports `has_delayed_milestones_binary` (SHAP = 0.303) as the 4th most important feature. However, this field is 100% null in the current dataset (CHT milestone fields are not yet backfilled) and was excluded from the preprocessor's 44 fitted columns. The SHAP label at position 3 in the output matrix is therefore mislabelled — a real predictor with a real contribution exists at that rank, but its true identity cannot be confirmed until the feature name alignment between the fitted preprocessor and the SHAP explainer is resolved. This is tracked as a known open issue.
+
+**⚠️ PNC label agreement:** Step 9 of the ETL pipeline compares the composite `is_defaulter` target (from the `iz` table) against the `is_immunization_defaulter` field in the `pnc` table. Agreement is **40.5% on 189 matched records** — below the expected 70%+ threshold. This is under active investigation and likely reflects different observation windows between the `iz` and `pnc` assessments rather than target variable contamination. The PNC field is used for audit only and is not a training feature.
+
+*Note: 6 maternal/milestone features (growth monitoring, ANC visits, MUAC) are not yet available due to a 0% maternal join rate; model performance is expected to improve further once `preg_reg` CHW-area linkage is resolved.*
 
 ---
 
@@ -262,7 +263,7 @@ PostgreSQL (12 tables · 11M+ rows in operational tables)
 │  XGBoost + Optuna  (src/model/)                             │
 │  50-trial TPE hyperparameter search (Optuna)                │
 │  scale_pos_weight=5.07 for 16.5% positive rate             │
-│  CalibratedClassifierCV isotonic (ECE = 0.020)              │
+│  CalibratedClassifierCV isotonic (ECE = 0.023)              │
 │  MLflow tracking + model registry (version 2 registered)   │
 └──────────────────────┬──────────────────────────────────────┘
                        │
@@ -279,9 +280,9 @@ PostgreSQL (12 tables · 11M+ rows in operational tables)
   │  FastAPI        │  │  Drift Monitor        │
   │  POST /predict  │  │  PSI feature drift    │
   │  POST /predict/ │  │  Label shift tracking │
-  │       batch     │  │  Near-constant feats  │
-  │  GET  /health   │  │  excluded from PSI    │
-  │  GET  /model/   │  │  (correct binning)    │
+  │       batch     │  │  Near-constant and    │
+  │  GET  /health   │  │  low-cardinality feats│
+  │  GET  /model/   │  │  skipped from PSI     │
   │       info      │  └──────────────────────┘
   └─────────────────┘
 ```
@@ -445,8 +446,8 @@ immunization-defaulter-risk-engine/
 │   └── shap/
 │       ├── shap_beeswarm.png    # Global SHAP impact
 │       ├── shap_bar.png         # Feature importance
-│       ├── waterfall_high_example.png    # 99.8% risk patient
-│       ├── waterfall_medium_example.png  # 59.9% risk patient
+│       ├── waterfall_high_example.png    # 99.7% risk patient
+│       ├── waterfall_medium_example.png  # 60.0% risk patient
 │       └── waterfall_low_example.png     # 33.0% risk patient
 │
 ├── main.py                      # CLI orchestrator (5 stages)
@@ -476,7 +477,7 @@ immunization-defaulter-risk-engine/
 The feature space includes 24 binary vaccine flags with complex age-conditional interactions (e.g., a child missing OPV-3 means something different at 4 months vs. 18 months). XGBoost handles these non-linear interactions natively while remaining fully explainable via SHAP.
 
 **Why isotonic calibration?**
-CHWs and MOH reviewers interpret scores as actionable probabilities. Raw XGBoost outputs are not calibrated — "0.74" does not mean 74% of such children default. Isotonic calibration enforces this guarantee (ECE = 0.020 on this dataset).
+CHWs and MOH reviewers interpret scores as actionable probabilities. Raw XGBoost outputs are not calibrated — "0.74" does not mean 74% of such children default. Isotonic calibration enforces this guarantee (ECE = 0.023 on this dataset).
 
 **Why PR-AUC as the primary metric?**
 At 16.5% positive rate, ROC-AUC looks good even for poor models. PR-AUC directly measures the quality of the high-risk ranking — the operationally critical metric for CHW daily prioritisation.

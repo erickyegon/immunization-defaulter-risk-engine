@@ -39,25 +39,45 @@ class DriftDetector:
             if len(vals) < 10:
                 skipped += 1
                 continue
-            # Skip near-constant features: percentile binning produces duplicate
-            # edges which cause histogram to misbehave and yield PSI >> 1.
+
+            # Skip near-constant features (std ≈ 0): e.g. chw_has_all_tools=1.0
+            # Percentile binning on a constant vector yields identical edges,
+            # which cause np.histogram to misbehave and produce PSI >> 1.
             if np.std(vals) < 1e-8:
                 skipped += 1
                 continue
-            bins = np.percentile(vals, np.linspace(0, 100, self.n_bins + 1))
-            # Only store if we can produce at least 2 unique bin edges
-            if len(np.unique(bins)) < 2:
+
+            # Skip low-cardinality features (fewer unique values than bins):
+            # e.g. county_encoded (3 counties), chw_immunization_competency_pct
+            # (9 discrete values). Percentile bins cluster at repeated values,
+            # producing degenerate reference proportions and PSI >> 1 even for
+            # near-identical distributions.
+            n_unique = len(np.unique(vals))
+            if n_unique < self.n_bins:
                 skipped += 1
                 continue
+
+            bins = np.percentile(vals, np.linspace(0, 100, self.n_bins + 1))
+            unique_bins = np.unique(bins)
+            if len(unique_bins) < 2:
+                skipped += 1
+                continue
+
+            # Store actual reference bin counts (not assumed uniform).
+            # Using unique_bins avoids duplicate-edge errors in np.histogram.
+            ref_counts, _ = np.histogram(vals, bins=unique_bins)
+
             self.reference_stats[col] = {
-                "bins":  bins,
-                "mean":  float(np.mean(vals)),
-                "std":   float(np.std(vals)),
+                "bins":       unique_bins,
+                "ref_counts": ref_counts,
+                "mean":       float(np.mean(vals)),
+                "std":        float(np.std(vals)),
             }
         self.reference_stats["_label_rate"] = float(y_train.mean())
         n_features = len(self.reference_stats) - 1
         logger.info(f"  Reference stats fitted on {len(X_train)} samples, "
-                    f"{n_features} numeric features ({skipped} near-constant skipped)")
+                    f"{n_features} numeric features ({skipped} skipped: "
+                    f"near-constant or low-cardinality)")
 
     def detect(
         self,
@@ -86,7 +106,7 @@ class DriftDetector:
             if len(new_vals) < 5:
                 continue
 
-            psi = self._compute_psi(new_vals, ref["bins"])
+            psi = self._compute_psi(new_vals, ref["bins"], ref["ref_counts"])
             status = (
                 "GREEN"  if psi < PSI_GREEN else
                 "AMBER"  if psi < PSI_AMBER else
@@ -150,33 +170,25 @@ class DriftDetector:
         </body></html>"""
 
     @staticmethod
-    def _compute_psi(new_vals: np.ndarray, ref_bins: np.ndarray) -> float:
+    def _compute_psi(
+        new_vals: np.ndarray,
+        ref_bins: np.ndarray,
+        ref_counts: np.ndarray,
+    ) -> float:
         """
         Population Stability Index (PSI) between reference and new distributions.
 
-        The reference was binned with np.percentile, so by construction each bin
-        holds ~1/n_bins of the reference data (uniform reference proportions).
-        We compare the new data against those same bins.
+        Uses actual reference bin counts (not assumed-uniform) so that PSI is
+        correct even when bin edges are not perfectly spaced after deduplication.
         """
-        # Deduplicate bin edges — duplicate edges arise for near-constant features
-        # and cause np.histogram to raise or produce nonsensical counts.
-        unique_bins = np.unique(ref_bins)
-        if len(unique_bins) < 2:
+        if len(ref_bins) < 2:
             return 0.0
 
-        n_bins = len(unique_bins) - 1
-        new_counts, _ = np.histogram(new_vals, bins=unique_bins)
+        new_counts, _ = np.histogram(new_vals, bins=ref_bins)
 
-        # Reference is uniform by construction (percentile-cut bins).
-        # If unique_bins lost some edges (originally had duplicates), redistribute.
-        ref_pct = np.ones(n_bins) / n_bins
-        new_pct = new_counts / max(new_counts.sum(), 1)
-
-        # Avoid log(0) with small epsilon floor
         eps     = 1e-6
-        ref_pct = np.clip(ref_pct, eps, None)
-        new_pct = np.clip(new_pct, eps, None)
+        ref_pct = np.clip(ref_counts / max(ref_counts.sum(), 1), eps, None)
+        new_pct = np.clip(new_counts / max(new_counts.sum(), 1), eps, None)
 
         psi = float(np.sum((new_pct - ref_pct) * np.log(new_pct / ref_pct)))
-        # PSI is always non-negative; floating-point noise can yield tiny negatives
         return max(psi, 0.0)

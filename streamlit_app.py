@@ -3,9 +3,11 @@ Immunization Defaulter Risk Engine — Streamlit Dashboard
 ─────────────────────────────────────────────────────────
 Audience: MOH programme managers and CHW supervisors.
 Language: Plain English. No statistics background required.
+Data:     Live PostgreSQL (primary) → cached Parquet (fallback).
 """
 
 import json
+import sys
 import warnings
 from pathlib import Path
 
@@ -18,6 +20,11 @@ import streamlit as st
 import yaml
 
 warnings.filterwarnings("ignore")
+
+# Make project src importable when run from repo root
+ROOT = Path(__file__).parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 # ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -85,7 +92,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-ROOT        = Path(__file__).parent
 DATA_DIR    = ROOT / "data" / "processed"
 REPORTS_DIR = ROOT / "reports"
 CONFIG_PATH = ROOT / "config" / "model_config.yaml"
@@ -121,9 +127,35 @@ def load_artifacts():
     feat_names   = joblib.load(DATA_DIR / "feature_names.pkl")
     return model, preprocessor, feat_names
 
-@st.cache_data(show_spinner="Loading patient data…")
-def load_dataset() -> pd.DataFrame:
-    return pd.read_parquet(DATA_DIR / "analytical_dataset.parquet")
+@st.cache_data(show_spinner="Loading patient data…", ttl=3600)
+def load_dataset(use_live_db: bool = False) -> pd.DataFrame:
+    """
+    Load the analytical dataset.
+    - use_live_db=True  → query PostgreSQL via src.ingestion.db (live data)
+    - use_live_db=False → load cached Parquet (fast, offline-capable)
+    Falls back to Parquet automatically if the DB connection fails.
+    """
+    if use_live_db:
+        try:
+            from src.ingestion.db import get_engine
+            engine = get_engine()
+            # Load the pre-computed analytical dataset saved by the ETL pipeline.
+            # This table is re-created each time `python main.py --stage etl` runs.
+            with engine.connect() as conn:
+                df = pd.read_sql("SELECT * FROM analytical_dataset", conn)
+            st.session_state["db_status"] = "live"
+            return df
+        except Exception as exc:
+            st.session_state["db_status"] = f"fallback ({exc.__class__.__name__})"
+            # Fall through to parquet
+    else:
+        st.session_state["db_status"] = "parquet"
+
+    parquet_path = DATA_DIR / "analytical_dataset.parquet"
+    if parquet_path.exists():
+        return pd.read_parquet(parquet_path)
+    st.error("No data available. Run `python main.py --stage etl` to generate the dataset.")
+    st.stop()
 
 @st.cache_data
 def load_config() -> dict:
@@ -184,6 +216,31 @@ def sidebar():
 
         st.markdown("---")
 
+        # ── Data source toggle ──
+        st.markdown(
+            "<div style='font-size:0.75rem; font-weight:700; color:#93c5fd; "
+            "text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;'>"
+            "Data Source</div>",
+            unsafe_allow_html=True,
+        )
+        use_live = st.toggle("Live PostgreSQL", value=False,
+                             help="ON = query live database   OFF = use cached dataset")
+        if use_live:
+            st.markdown(
+                "<div style='font-size:0.72rem; color:#86efac;'>🟢 Live DB mode — "
+                "data refreshes every hour</div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                "<div style='font-size:0.72rem; color:#94a3b8;'>📦 Cached dataset — "
+                "last updated when pipeline ran</div>",
+                unsafe_allow_html=True,
+            )
+
+        st.session_state["use_live_db"] = use_live
+        st.markdown("---")
+
         with st.expander("❓ How to use this tool", expanded=False):
             st.markdown("""
 **This tool helps CHW supervisors and programme managers identify children who are at risk of missing vaccines.**
@@ -220,6 +277,17 @@ Check if the data used to score children is still reliable and representative.
 
 # ── Page 1: Programme Dashboard ────────────────────────────────────────────────
 
+def _db_banner():
+    """Show a small status banner indicating the active data source."""
+    status = st.session_state.get("db_status", "")
+    if status == "live":
+        st.success("🟢 Live data — connected to PostgreSQL database")
+    elif status == "parquet":
+        st.info("📦 Cached dataset — showing last pipeline run. Toggle 'Live PostgreSQL' in the sidebar for real-time data.")
+    elif status:
+        st.warning(f"⚠️ PostgreSQL unavailable ({status}) — using cached dataset instead.")
+
+
 def page_dashboard():
     st.markdown("## 📊 Programme Dashboard")
     st.markdown(
@@ -228,7 +296,9 @@ def page_dashboard():
         "and see which age groups are most at risk."
     )
 
-    df  = load_dataset()
+    use_live = st.session_state.get("use_live_db", False)
+    df  = load_dataset(use_live_db=use_live)
+    _db_banner()
     cfg = load_config()
     model, preprocessor, feature_names = load_artifacts()
 
@@ -425,8 +495,10 @@ def page_scorer():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
+    use_live = st.session_state.get("use_live_db", False)
     model, preprocessor, feature_names = load_artifacts()
-    df  = load_dataset()
+    df  = load_dataset(use_live_db=use_live)
+    _db_banner()
     cfg = load_config()
 
     col1, col2 = st.columns([3, 1])
