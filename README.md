@@ -18,6 +18,22 @@ This engine solves that with a **real-time, explainable risk score** delivered t
 
 ---
 
+## Why This Matters for Managed Care
+
+The architecture of this engine maps directly onto the core challenges of Medicare and Medicaid managed care:
+
+| This Engine | Managed Care Equivalent |
+|---|---|
+| CHW prioritisation list | Member outreach prioritisation for preventive gap closure |
+| Vaccine defaulter probability | Care gap adherence risk score |
+| 16.5% positive rate with class imbalance handling | Same challenge in Medicare Stars gap-closure programs |
+| Per-patient SHAP plain-English drivers | Explainability requirement for HIPAA-compliant clinical decision support |
+| PSI drift monitoring across district rollouts | Model monitoring during phased member population rollouts |
+
+The methodology is domain-agnostic. The problem — identifying who will disengage from a care protocol before they do, ranking them by risk, and explaining why to a non-technical frontline worker — is structurally identical whether the setting is Kenya's EPI schedule or a Medicare Advantage HEDIS measure.
+
+---
+
 ## What It Does
 
 | Capability | Detail |
@@ -578,13 +594,17 @@ The operational tables (`active_chps`, `homevisit`, `population`, `fp`) accumula
 **Why per-patient SHAP instead of global importance?**
 CHWs need to explain to caregivers *why* a specific child is flagged. "Your child is 9 months old and hasn't received OPV-3 yet" is actionable. "The model weights age highly on average" is not.
 
+**Data provenance and governance**
+The methodology underpinning this engine has been applied across multiple national MOH deployments; this repository presents the Kenya implementation using data drawn directly from the Ministry of Health eCHIS platform, shared under the author's operational data governance agreements with Living Goods and the Kenya MOH.
+
 ---
 
 ## Author
 
 **Dr. Erick Kiprotich Yegon, PhD (Epidemiology)**
 AI & Data Science Consultant
-Former Global Director of Data Science & Analytics, Living Goods (8.5M+ individuals served)
+Former Global Director of Data Science & Analytics — community health programs serving 8.5M+ individuals
 30+ peer-reviewed publications · h-index 10 · EB-1A Permanent Resident
 
 `github.com/erickyegon` · Richmond, KY
+
