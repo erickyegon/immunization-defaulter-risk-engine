@@ -6,7 +6,9 @@ Language: Plain English. No statistics background required.
 Data:     Live PostgreSQL (primary) → cached Parquet (fallback).
 """
 
+import hashlib
 import json
+import os
 import sys
 import warnings
 from pathlib import Path
@@ -88,8 +90,51 @@ st.markdown("""
 .step-desc  { font-size: 0.82rem; color: #64748b; line-height: 1.5; }
 
 #MainMenu, footer { visibility: hidden; }
+
+/* Login page */
+.login-card {
+    max-width: 420px; margin: 80px auto; background: white;
+    border-radius: 16px; padding: 40px 44px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+}
+.login-title { font-size: 1.5rem; font-weight: 800; color: #1e3a5f;
+               text-align: center; margin-bottom: 4px; }
+.login-sub   { font-size: 0.85rem; color: #64748b; text-align: center;
+               margin-bottom: 28px; }
+.role-badge-admin { display:inline-block; background:#1e3a5f; color:white;
+                    font-size:0.68rem; font-weight:700; padding:2px 10px;
+                    border-radius:20px; letter-spacing:0.06em; }
+.role-badge-user  { display:inline-block; background:#0ea5e9; color:white;
+                    font-size:0.68rem; font-weight:700; padding:2px 10px;
+                    border-radius:20px; letter-spacing:0.06em; }
 </style>
 """, unsafe_allow_html=True)
+
+# ── Auth constants ──────────────────────────────────────────────────────────────
+# Passwords are read from environment variables if set, otherwise use defaults.
+# To change passwords without editing code: set ADMIN_PASSWORD / USER_PASSWORD
+# in your .env file.
+def _hash(pw: str) -> str:
+    return hashlib.sha256(pw.encode()).hexdigest()
+
+_CREDENTIALS = {
+    _hash(os.getenv("ADMIN_PASSWORD", "Kenya2025")): "Administrator",
+    _hash(os.getenv("USER_PASSWORD",  "Kenya")):     "User",
+}
+
+# Pages each role can access
+_ROLE_PAGES = {
+    "Administrator": [
+        "📊 Programme Dashboard",
+        "🔍 Check a Patient's Risk",
+        "📈 How Well Does the Model Work?",
+        "🔔 Data Quality & Model Health",
+    ],
+    "User": [
+        "📊 Programme Dashboard",
+        "🔍 Check a Patient's Risk",
+    ],
+}
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 DATA_DIR    = ROOT / "data" / "processed"
@@ -169,6 +214,73 @@ def load_drift_report() -> pd.DataFrame:
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
+# ── Authentication ─────────────────────────────────────────────────────────────
+
+def show_login():
+    """Render the login page. Returns True when the user has just authenticated."""
+    _, col, _ = st.columns([1, 2, 1])
+    with col:
+        st.markdown("""
+        <div style='text-align:center; margin-top:60px; margin-bottom:32px;'>
+            <div style='font-size:3.5rem;'>💉</div>
+            <div style='font-size:1.6rem; font-weight:800; color:#1e3a5f; margin:8px 0 4px 0;'>
+                Immunization Defaulter<br>Risk Engine
+            </div>
+            <div style='font-size:0.85rem; color:#64748b;'>
+                Kenya CHW Programme · Secure Access
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        with st.form("login_form", clear_on_submit=True):
+            st.markdown(
+                "<div style='font-size:0.8rem; color:#64748b; margin-bottom:16px; "
+                "text-align:center;'>Enter your access password to continue</div>",
+                unsafe_allow_html=True,
+            )
+            password = st.text_input(
+                "Password", type="password",
+                placeholder="Enter password…",
+                label_visibility="collapsed",
+            )
+            submitted = st.form_submit_button(
+                "Sign In →", use_container_width=True, type="primary"
+            )
+
+        if submitted:
+            role = _CREDENTIALS.get(_hash(password))
+            if role:
+                st.session_state["authenticated"] = True
+                st.session_state["role"]          = role
+                st.rerun()
+            else:
+                st.error("Incorrect password. Please try again.")
+
+        st.markdown(
+            "<div style='text-align:center; font-size:0.72rem; color:#94a3b8; margin-top:32px;'>"
+            "Contact your programme data team if you have lost your password."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+    st.stop()
+
+
+def require_auth():
+    """Call at the top of main() — redirects to login if not authenticated."""
+    if not st.session_state.get("authenticated"):
+        show_login()
+
+
+def current_role() -> str:
+    return st.session_state.get("role", "User")
+
+
+def is_admin() -> bool:
+    return current_role() == "Administrator"
+
+
+# ── Helpers ────────────────────────────────────────────────────────────────────
+
 def get_risk_tier(score: float, cfg: dict) -> str:
     tiers = cfg.get("api", {}).get("risk_tiers", {})
     for tier in ["high", "medium", "low"]:
@@ -192,9 +304,13 @@ def fname(col):
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 
 def sidebar():
+    role  = current_role()
+    pages = _ROLE_PAGES[role]
+
     with st.sidebar:
+        # ── Branding ──
         st.markdown("""
-        <div style='text-align:center; padding:10px 0 20px 0;'>
+        <div style='text-align:center; padding:10px 0 16px 0;'>
             <div style='font-size:2.5rem;'>💉</div>
             <div style='font-size:1.0rem; font-weight:700; color:#93c5fd; line-height:1.4;'>
                 Immunization Defaulter<br>Risk Engine
@@ -205,71 +321,93 @@ def sidebar():
         </div>
         """, unsafe_allow_html=True)
 
-        page = st.radio(
-            "Go to",
-            ["📊 Programme Dashboard",
-             "🔍 Check a Patient's Risk",
-             "📈 How Well Does the Model Work?",
-             "🔔 Data Quality & Model Health"],
-            label_visibility="collapsed",
+        # ── Role badge ──
+        badge_style = (
+            "background:#f59e0b; color:#1c1917;"
+            if role == "Administrator"
+            else "background:#0ea5e9; color:white;"
         )
-
-        st.markdown("---")
-
-        # ── Data source toggle ──
+        role_icon = "🔐" if role == "Administrator" else "👤"
         st.markdown(
-            "<div style='font-size:0.75rem; font-weight:700; color:#93c5fd; "
-            "text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;'>"
-            "Data Source</div>",
+            f"<div style='text-align:center; margin-bottom:14px;'>"
+            f"<span style='{badge_style} font-size:0.7rem; font-weight:700; "
+            f"padding:3px 14px; border-radius:20px; letter-spacing:0.06em;'>"
+            f"{role_icon} {role.upper()}</span></div>",
             unsafe_allow_html=True,
         )
-        use_live = st.toggle("Live PostgreSQL", value=False,
-                             help="ON = query live database   OFF = use cached dataset")
-        if use_live:
-            st.markdown(
-                "<div style='font-size:0.72rem; color:#86efac;'>🟢 Live DB mode — "
-                "data refreshes every hour</div>",
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                "<div style='font-size:0.72rem; color:#94a3b8;'>📦 Cached dataset — "
-                "last updated when pipeline ran</div>",
-                unsafe_allow_html=True,
-            )
 
-        st.session_state["use_live_db"] = use_live
         st.markdown("---")
 
-        with st.expander("❓ How to use this tool", expanded=False):
-            st.markdown("""
-**This tool helps CHW supervisors and programme managers identify children who are at risk of missing vaccines.**
+        # ── Navigation (role-filtered) ──
+        page = st.radio("Go to", pages, label_visibility="collapsed")
 
-**Four pages:**
+        st.markdown("---")
+
+        # ── Admin-only: Data source toggle ──
+        if is_admin():
+            st.markdown(
+                "<div style='font-size:0.75rem; font-weight:700; color:#93c5fd; "
+                "text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;'>"
+                "Data Source</div>",
+                unsafe_allow_html=True,
+            )
+            use_live = st.toggle(
+                "Live PostgreSQL", value=False,
+                help="ON = query live database   OFF = use cached dataset",
+            )
+            if use_live:
+                st.markdown(
+                    "<div style='font-size:0.72rem; color:#86efac;'>🟢 Live DB — "
+                    "refreshes every hour</div>", unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    "<div style='font-size:0.72rem; color:#94a3b8;'>📦 Cached — "
+                    "last pipeline run</div>", unsafe_allow_html=True,
+                )
+            st.session_state["use_live_db"] = use_live
+            st.markdown("---")
+        else:
+            st.session_state["use_live_db"] = False
+
+        # ── Help ──
+        with st.expander("❓ How to use this tool", expanded=False):
+            base_help = """
+**This tool helps CHW supervisors and programme managers identify children at risk of missing vaccines.**
 
 **📊 Programme Dashboard**
-See an overview of all children — how many are high risk, where they are, and which age groups are most at risk.
+Overview of all children — how many are high risk, where they are, which age groups need attention.
 
 **🔍 Check a Patient's Risk**
-Look up a specific child by their ID to see their risk score and the reasons behind it.
+Look up a specific child by ID to see their risk score and the reasons behind it.
+"""
+            admin_help = """
+**📈 How Well Does the Model Work?** *(Administrator only)*
+Model accuracy, calibration charts, threshold decisions, and fairness analysis.
 
-**📈 How Well Does the Model Work?**
-Understand how accurate the predictions are and what the model is based on.
-
-**🔔 Data Quality & Model Health**
-Check if the data used to score children is still reliable and representative.
-
----
-*This tool does not replace clinical judgement. It is a prioritisation aid to help CHWs focus their limited time on the children who need them most.*
-            """)
+**🔔 Data Quality & Model Health** *(Administrator only)*
+Monitor whether the data has shifted since the model was trained.
+"""
+            st.markdown(base_help + (admin_help if is_admin() else ""))
+            st.markdown(
+                "---\n"
+                "*This tool does not replace clinical judgement. It is a prioritisation "
+                "aid to help CHWs focus limited time on children who need them most.*"
+            )
 
         st.markdown("---")
+
+        # ── Logout ──
+        if st.button("Sign Out", use_container_width=True):
+            for key in ["authenticated", "role", "use_live_db", "db_status"]:
+                st.session_state.pop(key, None)
+            st.rerun()
+
         st.markdown(
-            "<div style='font-size:0.7rem; color:#64748b; line-height:1.7;'>"
+            "<div style='font-size:0.68rem; color:#475569; line-height:1.7; margin-top:8px;'>"
             "<b>Dr. Erick K. Yegon, PhD</b><br>"
             "AI &amp; Data Science Consultant<br>"
-            "Former Global Director, Data Science &amp; Analytics<br>"
-            "Living Goods · github.com/erickyegon"
+            "github.com/erickyegon"
             "</div>",
             unsafe_allow_html=True,
         )
@@ -1059,6 +1197,7 @@ Ideally, this page should be reviewed once a month after each data refresh.
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
+    require_auth()          # redirect to login page if not authenticated
     page = sidebar()
 
     if "Dashboard" in page:
@@ -1066,9 +1205,15 @@ def main():
     elif "Patient" in page:
         page_scorer()
     elif "Model" in page:
-        page_performance()
+        if is_admin():
+            page_performance()
+        else:
+            st.warning("This page is available to Administrators only.")
     elif "Data Quality" in page:
-        page_drift()
+        if is_admin():
+            page_drift()
+        else:
+            st.warning("This page is available to Administrators only.")
 
 
 if __name__ == "__main__":
