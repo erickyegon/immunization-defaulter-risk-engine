@@ -5,6 +5,18 @@
 [![Live App](https://img.shields.io/badge/Live%20App-immunizationengine.streamlit.app-FF4B4B?logo=streamlit&logoColor=white)](https://immunizationengine.streamlit.app/)
 
 > **Try it live:** [https://immunizationengine.streamlit.app/](https://immunizationengine.streamlit.app/)
+> *Hosted on Streamlit Community Cloud free tier — if the app is sleeping, click "Yes, get this app back up!" and it will resume within ~30 seconds.*
+
+---
+
+## Dashboard Screenshots
+
+| 🔐 Administrator View | 👤 User View (CHW Supervisor) |
+|---|---|
+| Full technical depth: model performance, drift monitor, live PostgreSQL toggle, all four pages | Stakeholder-appropriate view: programme dashboard and patient risk scorer only — no model internals |
+| ![Administrator Dashboard](docs/screenshots/dashboard_admin.png) | ![User Dashboard](docs/screenshots/dashboard_user.png) |
+
+*Role separation is enforced at the navigation level — locked pages are not visible to Users, not merely blocked.*
 
 ---
 
