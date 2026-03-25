@@ -395,7 +395,19 @@ uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 ```bash
 streamlit run streamlit_app.py
 # Opens at http://localhost:8501
-# Pages: Dashboard · Patient Risk Scorer · Model Performance · Drift Monitor
+```
+
+The dashboard requires a password at login. Two roles are pre-configured:
+
+| Role | Default Password | Access |
+|---|---|---|
+| **User** | `Kenya` | Programme Dashboard · Patient Risk Scorer |
+| **Administrator** | `Kenya2025` | All pages · Live PostgreSQL toggle · Drift Monitor · Model Performance |
+
+To change passwords without editing code, set environment variables in `.env`:
+```bash
+ADMIN_PASSWORD=your_new_admin_password
+USER_PASSWORD=your_new_user_password
 ```
 
 ### 7. Docker
@@ -403,6 +415,36 @@ streamlit run streamlit_app.py
 docker build -t iz-defaulter .
 docker run -p 8000:8000 --env-file .env iz-defaulter
 ```
+
+---
+
+## Access Control (RBAC)
+
+The Streamlit dashboard implements role-based access control with two roles:
+
+### Roles and Permissions
+
+| Feature | User | Administrator |
+|---|---|---|
+| Programme Dashboard | ✅ | ✅ |
+| Patient Risk Scorer | ✅ | ✅ |
+| Model Performance page | ❌ | ✅ |
+| Data Quality & Model Health page | ❌ | ✅ |
+| Live PostgreSQL data toggle | ❌ | ✅ |
+| Role badge in sidebar | 🔵 Blue | 🟡 Amber |
+
+### Intended audiences
+
+**User** — CHW supervisors and MOH programme managers who need to view the programme dashboard and look up individual patient risk scores. They do not need access to technical model internals.
+
+**Administrator** — Data scientists, M&E leads, and technical programme staff who need to review model performance, monitor data drift, and switch between cached and live data sources.
+
+### How it works
+
+- Passwords are **SHA-256 hashed** before comparison — never stored or logged in plaintext.
+- Session state is cleared on sign-out, requiring re-authentication on the next visit.
+- Passwords are configurable via `.env` without changing source code (`ADMIN_PASSWORD`, `USER_PASSWORD`).
+- The navigation menu itself is filtered by role — locked pages are not visible to Users, not merely blocked.
 
 ---
 
