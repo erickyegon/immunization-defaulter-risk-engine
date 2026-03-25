@@ -459,6 +459,46 @@ immunization-defaulter-risk-engine/
 
 ---
 
+## Known Limitations & Open Issues
+
+These issues are tracked deliberately. Documenting them here reflects methodological transparency, not incompleteness.
+
+| # | Issue | Severity | Status |
+|---|---|---|---|
+| 1 | **SHAP rank-4 label unresolved** | Medium | Open |
+| 2 | **Maternal ANC join — 0% match rate** | High | Open |
+| 3 | **PNC label agreement — 40.5%** | Medium | Under investigation |
+
+---
+
+**1. SHAP rank-4 feature label unresolved**
+
+The SHAP explainer reports `has_delayed_milestones_binary` as the 4th most important predictor (mean |SHAP| = 0.303). However, this field is 100% null in the current dataset — CHT milestone fields (`has_delayed_milestones`, `is_growth_monitoring`) have not yet been backfilled from CHP assessments — and the feature was excluded from the fitted preprocessor's 44 columns. The label at position 3 of the SHAP output matrix therefore points to a real, contributing predictor whose true identity is not yet confirmed. This is a feature-name alignment issue between the fitted `ColumnTransformer` and the SHAP explainer's name list, not a data leakage issue. The SHAP value is real; the label is wrong.
+
+**Resolution path:** Confirm which column occupies position 3 in `preprocessor.transformers_` output and update the SHAP explainer to load names from the fitted preprocessor rather than from the pre-fit feature list.
+
+---
+
+**2. Maternal ANC join — 0% match rate**
+
+Step 8 of the ETL pipeline attempts to join maternal health-seeking behaviour (ANC visits, MUAC risk, FP status) from the `preg_reg` / `preg_reg2` tables to child records in `iz`. The join currently resolves 0% of records because neither `contact_parent_parent_id` nor a `chw_area` column is present in the `preg_reg` extract with a UUID that maps to `iz.contact_parent_id`.
+
+As a result, the following 6 features are 100% null and excluded from the model: `maternal_anc_visits`, `maternal_anc_defaulter`, `maternal_muac_risk`, `maternal_iron_folate`, `is_growth_monitoring_binary`, `has_delayed_milestones_binary`. The model achieves ROC-AUC = 0.893 without these features; inclusion is expected to improve recall for infants whose risk is driven by maternal health-seeking rather than their own vaccine history.
+
+**Resolution path:** Confirm the correct linkage key between `preg_reg` and `iz` in the production CHT schema (likely a household or community-unit UUID chain). Update `src/etl/merger.py` Step 8 accordingly.
+
+---
+
+**3. PNC label agreement — 40.5%**
+
+Step 9 of the ETL pipeline compares the composite `is_defaulter` target (built from the `iz` table) against the `is_immunization_defaulter` field in the `pnc` table as a ground-truth audit. Agreement is 40.5% on 189 matched records — below the expected ≥70% threshold for label consistency.
+
+Most likely causes: (a) the `pnc` record is linked by the **mother's** `patient_id`, not the child's, meaning the matched records are not the same individuals; (b) the `pnc` field reflects a different observation window than the 30-day `iz` composite target. The PNC field is used for audit only — it is **not** a training feature and does not affect model predictions. However, low agreement is a signal that the ground-truth validation step is not yet functional, which reduces confidence in target variable quality.
+
+**Resolution path:** Verify whether `pnc.patient_id` refers to the mother or child. If the former, join via a mother→child linkage table or use `pnc.contact_id` (child). Then re-audit agreement; target ≥ 70%.
+
+---
+
 ## Responsible AI & Deployment Roadmap
 
 | Phase | Scope | Gate Criteria |
