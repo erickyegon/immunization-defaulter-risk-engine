@@ -1,33 +1,33 @@
 {
-  "patient_id": "c1624339-4307-4fdc-89c6-5aef8ab924ec",
-  "patient_name": "Davin Joshua Okello",
-  "risk_score": 0.5991,
-  "risk_pct": 59.9,
+  "patient_id": "b5e70154-439c-4121-a721-096087276305",
+  "patient_name": "Riche  Michael",
+  "risk_score": 0.5995,
+  "risk_pct": 60.0,
   "risk_tier": "MEDIUM",
   "top_drivers": [
     {
-      "feature": "patient_age_in_months",
-      "friendly_name": "Child's age (months)",
-      "feature_value": 9.0,
-      "shap_value": 0.5125,
+      "feature": "penta_series_complete",
+      "friendly_name": "Penta 1-2-3 series complete",
+      "feature_value": 272.5714,
+      "shap_value": 1.028,
       "direction": "increases_risk",
-      "plain_english": "Child is 9 months old \u2014 age context increases defaulter risk"
-    },
-    {
-      "feature": "months_since_reported",
-      "friendly_name": "Months since last CHW contact",
-      "feature_value": 12.1879,
-      "shap_value": -0.3658,
-      "direction": "decreases_risk",
-      "plain_english": "Last CHW contact was 12.2 month(s) ago \u2014 this reduces defaulter risk"
+      "plain_english": "Penta 1-2-3 series complete value=272.57 increases defaulter risk"
     },
     {
       "feature": "has_delayed_milestones_binary",
       "friendly_name": "has_delayed_milestones_binary",
-      "feature_value": 17.0,
-      "shap_value": -0.2344,
+      "feature_value": 49.0,
+      "shap_value": 0.6344,
+      "direction": "increases_risk",
+      "plain_english": "has_delayed_milestones_binary value=49.00 increases defaulter risk"
+    },
+    {
+      "feature": "patient_age_in_months",
+      "friendly_name": "Child's age (months)",
+      "feature_value": 13.0,
+      "shap_value": -0.6061,
       "direction": "decreases_risk",
-      "plain_english": "has_delayed_milestones_binary value=17.00 reduces defaulter risk"
+      "plain_english": "Child is 13 months old \u2014 age context reduces defaulter risk"
     }
   ],
   "recommended_action": "Prioritise within-month home visit. Review vaccine card.",

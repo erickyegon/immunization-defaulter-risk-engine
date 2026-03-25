@@ -41,30 +41,34 @@ This engine solves that with a **real-time, explainable risk score** delivered t
 |---|---|---|
 | **ROC-AUC** | **0.892** | Excellent separation between defaulters and non-defaulters |
 | **PR-AUC** | **0.698** | Strong ranking quality on the imbalanced positive class |
-| **F1 Score** | 0.565 | Balanced precision/recall at default threshold |
-| **Precision** | 0.781 | 78% of flagged children are true defaulters |
-| **Recall** | 0.443 | Catches 44% of all defaulters at default threshold |
+| **F1 Score** | 0.580 | Balanced precision/recall at default threshold |
+| **Precision** | 0.772 | 77% of flagged children are true defaulters |
+| **Recall** | 0.465 | Catches 47% of all defaulters at default threshold |
 | **Brier Score** | 0.084 | Well-calibrated probability estimates |
-| **ECE** | **0.020** | Near-perfect calibration (2pp expected error) |
-| **Precision@Top 20%** | 0.566 | CHWs visiting top-ranked children: 57% are true defaulters |
+| **ECE** | **0.023** | Near-perfect calibration (2pp expected error) |
+| **Precision@Top 20%** | 0.569 | CHWs visiting top-ranked children: 57% are true defaulters |
 
 ### Fairness — Zero Bias Across Sex
 
 | Group | N | Positive Rate | ROC-AUC |
 |---|---|---|---|
-| Female | 694 | 15.7% | 0.884 |
-| Male | 675 | 17.3% | 0.909 |
-| **AUC gap** | — | — | **0.025** *(threshold: <0.10)* |
+| Female | 694 | 15.7% | 0.882 |
+| Male | 675 | 17.3% | 0.902 |
+| **AUC gap** | — | — | **0.020** *(threshold: <0.10)* |
 
 ### Threshold Operating Curve
 
 | Threshold | Children Flagged | Precision | Recall | F1 |
 |---|---|---|---|---|
-| 0.30 | 483 | 41.0% | 87.6% | 0.559 |
-| 0.40 | 380 | 47.1% | 79.2% | 0.591 |
+| 0.30 | 504 | 39.3% | 87.6% | 0.542 |
+| 0.35 | 451 | 42.8% | 85.4% | 0.570 |
+| 0.40 | 394 | 46.7% | 81.4% | 0.594 |
+| 0.45 | 351 | 49.9% | 77.4% | 0.607 |
 | **0.50** | **306** | **53.9%** | **73.0%** | **0.620** |
-| 0.60 | 232 | 64.7% | 66.4% | 0.655 |
-| 0.70 | 167 | 73.7% | 54.4% | 0.626 |
+| 0.55 | 270 | 57.4% | 68.6% | 0.625 |
+| 0.60 | 229 | 62.0% | 62.8% | 0.624 |
+| 0.65 | 200 | 67.0% | 59.3% | 0.629 |
+| 0.70 | 169 | 73.4% | 54.9% | 0.628 |
 
 *Operational note: threshold = 0.50 maximises F1. For CHW deployment where missing a defaulter has consequences, threshold = 0.30–0.35 raises recall to 88–94% at ~7% flag rate — this decision should be made jointly with program staff.*
 
@@ -101,26 +105,26 @@ Every prediction is decomposed into plain-English per-patient drivers using Tree
 
 | Rank | Feature | SHAP | Domain |
 |---|---|---|---|
-| 1 | Child's age (months) | **0.749** | Child biology |
-| 2 | Months since last CHW contact | **0.555** | Engagement |
-| 3 | Penta 1-2-3 series complete | **0.434** | Vaccine history |
-| 4 | Overall vaccine completeness (all) | 0.228 | Vaccine history |
-| 5 | Doses currently outstanding | 0.203 | Operational |
-| 6 | Vitamin A completeness | 0.193 | Nutrition |
-| 7 | Core vaccine completeness score | 0.109 | Vaccine history |
-| 8 | OPV 1-2-3 series complete | 0.098 | Vaccine history |
-| 9 | Total vaccines received | 0.078 | Vaccine history |
-| 10 | CHW has PPE | 0.074 | CHW quality |
+| 1 | Child's age (months) | **0.726** | Child biology |
+| 2 | Months since last CHW contact | **0.515** | Engagement |
+| 3 | Penta 1-2-3 series complete | **0.398** | Vaccine history |
+| 4 | Overall vaccine completeness (all) | 0.211 | Vaccine history |
+| 5 | Doses currently outstanding | 0.200 | Operational |
+| 6 | Vitamin A completeness | 0.178 | Nutrition |
+| 7 | Core vaccine completeness score | 0.116 | Vaccine history |
+| 8 | OPV 1-2-3 series complete | 0.093 | Vaccine history |
+| 9 | Under-2 children per CHW area | 0.067 | CHW workload |
 
 *Age and recency of CHW contact are the dominant signals — consistent with epidemiological priors.*
+*Note: 6 maternal/milestone features (growth monitoring, ANC visits, MUAC) are not yet available due to a 0% maternal join rate; these will improve once the preg_reg CHW-area linkage is resolved.*
 
-### Per-Patient Waterfall: HIGH Risk (99.8%)
+### Per-Patient Waterfall: HIGH Risk (99.7%)
 
 ![HIGH Risk Waterfall](reports/shap/waterfall_high_example.png)
 
 > *"Child has 3 outstanding vaccine doses. Immediate home visit required. Arrange facility referral."*
 
-### Per-Patient Waterfall: MEDIUM Risk (59.9%)
+### Per-Patient Waterfall: MEDIUM Risk (60.0%)
 
 ![MEDIUM Risk Waterfall](reports/shap/waterfall_medium_example.png)
 
@@ -145,7 +149,7 @@ PostgreSQL (12 tables · 11M+ rows in operational tables)
 │  ETL Pipeline  (src/etl/)                                   │
 │  Loader → Cleaner → Merger (10-step blueprint)              │
 │  ─────────────────────────────────────────────────────────  │
-│  Step 1:  Deduplicate iz (8,814 → 8,745 records)           │
+│  Step 1:  Deduplicate iz (8,814 → 8,731 records)           │
 │  Step 2:  EPI-schedule-gated vaccine completeness scores    │
 │  Step 3:  Composite target variable construction            │
 │  Step 4:  CHW metadata join          (100% match)           │
@@ -300,7 +304,14 @@ uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 # Authenticate: X-API-Key header (set API_KEY in .env)
 ```
 
-### 6. Docker
+### 6. Launch Streamlit dashboard
+```bash
+streamlit run streamlit_app.py
+# Opens at http://localhost:8501
+# Pages: Dashboard · Patient Risk Scorer · Model Performance · Drift Monitor
+```
+
+### 7. Docker
 ```bash
 docker build -t iz-defaulter .
 docker run -p 8000:8000 --env-file .env iz-defaulter
@@ -353,6 +364,7 @@ immunization-defaulter-risk-engine/
 │       └── waterfall_low_example.png     # 33.0% risk patient
 │
 ├── main.py                      # CLI orchestrator (5 stages)
+├── streamlit_app.py             # Streamlit dashboard (4 pages)
 ├── requirements.txt
 ├── Dockerfile
 └── .env.example
