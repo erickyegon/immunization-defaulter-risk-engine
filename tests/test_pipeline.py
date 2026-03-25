@@ -39,7 +39,7 @@ def synthetic_iz():
         "contact_id":                  [f"cid_{i}" for i in range(n)],
         "contact_parent_id":           np.random.choice([f"area_{j}" for j in range(5)], n),
         "contact_parent_parent_id":    [f"hh_{i%20}" for i in range(n)],
-        "county":                      np.random.choice(["Busia", "Old"], n),
+        "county":                      np.random.choice(["County A", "County B"], n),
         "month":                       np.random.choice(["Feb25_2", "Mar25", "Dec24"], n),
         "reported":                    pd.date_range("2025-01-01", periods=n, freq="D").astype(str),
         "needs_follow_up":             np.random.choice(["yes", "no"], n, p=[0.25, 0.75]),
