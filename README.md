@@ -76,16 +76,51 @@ This engine solves that with a **real-time, explainable risk score** delivered t
 
 ## Visualisations
 
+> **Reading guide for programme stakeholders:** Each chart below includes an interpretation written for three audiences — *CHW supervisors*, *MOH programme managers*, and *data/technical reviewers*. You do not need a statistics background to act on these results.
+
+---
+
 ### ROC & Precision-Recall Curves
+
 ![ROC and PR Curves](reports/roc_pr_curves.png)
 
+**What you are looking at:** Two curves that measure how well the model ranks children by defaulter risk across all possible thresholds. The ROC curve plots the true-positive rate (sensitivity) against the false-positive rate. The Precision-Recall curve plots the fraction of flagged children who are true defaulters (precision) against the fraction of all defaulters captured (recall).
+
+| Audience | What it means |
+|---|---|
+| **CHW supervisor** | The model is much better than random chance at identifying which children are likely to miss vaccines. At almost any workload level you choose, it outperforms a simple age or visit-recency rule. |
+| **MOH programme manager** | ROC-AUC = 0.893 means the model correctly ranks a defaulter above a non-defaulter 89% of the time. This is a strong signal for a real-world, imbalanced public health dataset. PR-AUC = 0.697 confirms the quality holds even when only 1 in 6 children is a defaulter. |
+| **Technical reviewer** | The PR curve area of 0.697 substantially exceeds the no-skill baseline of 0.165 (positive rate). Both curves were computed on a stratified 20% held-out test set, not training data. |
+
+---
+
 ### Probability Calibration
-> ECE = 0.020 — predicted probabilities match observed defaulter rates within 2 percentage points.
+
+> ECE = 0.023 — predicted probabilities match observed defaulter rates within 2 percentage points.
 
 ![Calibration Curve](reports/calibration_curve.png)
 
+**What you are looking at:** The diagonal line represents a *perfectly calibrated* model — one where a score of 0.70 means exactly 70% of such children are true defaulters. Each dot shows the actual observed defaulter rate for children grouped by their predicted score. Dots close to the diagonal mean the model's probabilities are trustworthy as real-world rates.
+
+| Audience | What it means |
+|---|---|
+| **CHW supervisor** | When the app shows "72% risk", roughly 7 out of every 10 children with that score will genuinely be defaulters. The score is not just a ranking — it is an actionable probability that supervisors can communicate to caregivers. |
+| **MOH programme manager** | Calibrated probabilities allow the programme to estimate how many defaulters will be missed at any given operational threshold. This is essential for planning CHW workload and catching high-burden sub-counties. |
+| **Technical reviewer** | Isotonic regression calibration was applied post-training using 5-fold cross-validation. ECE = 0.023 (2.3pp expected error) is well within the acceptable threshold of 0.15 defined in the model config. The calibration curve shows no systematic over- or under-confidence across the probability range. |
+
+---
+
 ### Feature Importance
+
 ![Feature Importance](reports/feature_importance.png)
+
+**What you are looking at:** A bar chart of the model's internal feature importance scores (XGBoost gain) — how much each variable contributed to splitting decisions across all 290 trees. Longer bars = stronger contributors to the prediction.
+
+| Audience | What it means |
+|---|---|
+| **CHW supervisor** | The model relies most on information CHWs already collect: the child's age, how recently a CHW made contact, and whether the Penta series is complete. No exotic data inputs are needed — the existing CHT forms already capture the strongest signals. |
+| **MOH programme manager** | The dominance of *age* and *months since last CHW contact* confirms that programme engagement quality (visit recency) is as predictive as clinical history. Investment in consistent CHW home visits directly improves the model's ability to identify defaulters early. |
+| **Technical reviewer** | XGBoost gain importance is computed per-tree split and can be biased toward high-cardinality continuous features. SHAP values (below) provide a more robust, model-agnostic importance ranking. Both approaches yield consistent top-3 features. |
 
 ---
 
@@ -93,13 +128,35 @@ This engine solves that with a **real-time, explainable risk score** delivered t
 
 Every prediction is decomposed into plain-English per-patient drivers using TreeSHAP. CHWs receive a natural-language summary alongside the risk score.
 
+---
+
 ### Global Feature Impact — Beeswarm Plot
-> Each dot = one patient. Colour = feature value (red = high). Position = SHAP impact on defaulter probability.
+
+> Each dot = one patient. Colour = feature value (red = high, blue = low). Horizontal position = SHAP impact on defaulter probability (right = increases risk, left = decreases risk).
 
 ![SHAP Beeswarm](reports/shap/shap_beeswarm.png)
 
+**What you are looking at:** Each dot represents one patient. The plot shows both *direction* (does a high value of this feature push the score up or down?) and *magnitude* (how much does it move the score?) simultaneously. Features are ranked by their average absolute impact.
+
+| Audience | What it means |
+|---|---|
+| **CHW supervisor** | Red dots to the right of centre mean "a high value of this feature increases the risk score." For *Doses currently outstanding*, red (many outstanding doses) pushes risk up — exactly as expected. Blue dots to the right of centre mean "a low value increases risk" — for *Penta series complete*, low completeness (blue) is the danger signal. |
+| **MOH programme manager** | The beeswarm shows that older children (red, top row) are generally at *lower* risk because they have aged out of the core EPI window — while children in the 6–18 month window (medium age, blue/red mixed) show the widest spread of risk. District plans should target this age band. |
+| **Technical reviewer** | SHAP values were computed using TreeExplainer on the base XGBoost estimator extracted from `CalibratedClassifierCV`. Background sample = 100 randomly selected training records. Values represent additive log-odds contributions consistent with the model's output space. |
+
+---
+
 ### Global Feature Importance — Bar Chart
+
 ![SHAP Bar](reports/shap/shap_bar.png)
+
+**What you are looking at:** The mean absolute SHAP value per feature across all patients — a single summary number representing each feature's average contribution to moving the risk score away from the population baseline.
+
+| Audience | What it means |
+|---|---|
+| **CHW supervisor** | *Child's age* and *months since last CHW contact* are the two features that move the risk score the most on average. A CHW who visits a family on time — regardless of any other factor — meaningfully reduces that child's predicted risk. |
+| **MOH programme manager** | The top three features (age, visit recency, Penta series) are all programme-actionable. This means the model is not relying on fixed socioeconomic factors that the programme cannot change — it is reflecting behaviours and service delivery quality that CHW training and supervision can directly improve. |
+| **Technical reviewer** | Mean \|SHAP\| values are more reliable than XGBoost gain for comparing features of different scales and cardinalities, as they reflect actual impact on output probabilities rather than tree-splitting frequency. |
 
 ### Top 10 Features by Mean |SHAP|
 
@@ -115,8 +172,11 @@ Every prediction is decomposed into plain-English per-patient drivers using Tree
 | 8 | OPV 1-2-3 series complete | 0.093 | Vaccine history |
 | 9 | Under-2 children per CHW area | 0.067 | CHW workload |
 
-*Age and recency of CHW contact are the dominant signals — consistent with epidemiological priors.*
-*Note: 6 maternal/milestone features (growth monitoring, ANC visits, MUAC) are not yet available due to a 0% maternal join rate; these will improve once the preg_reg CHW-area linkage is resolved.*
+*Age and recency of CHW contact are the dominant signals — consistent with epidemiological priors. Features 1–3 alone account for 60% of the total mean |SHAP| across the top 9.*
+
+*Note: 6 maternal/milestone features (growth monitoring, ANC visits, MUAC) are not yet available due to a 0% maternal join rate; model performance is expected to improve further once preg_reg CHW-area linkage is resolved.*
+
+---
 
 ### Per-Patient Waterfall: HIGH Risk (99.7%)
 
@@ -124,13 +184,39 @@ Every prediction is decomposed into plain-English per-patient drivers using Tree
 
 > *"Child has 3 outstanding vaccine doses. Immediate home visit required. Arrange facility referral."*
 
+**What you are looking at:** Each bar shows one feature's contribution to this specific child's risk score. Red bars push the score higher (toward defaulter); blue bars push it lower (toward on-track). The final predicted probability appears at the top. The baseline (E[f(x)]) is the average risk score across all children — bars show how this particular child deviates from average.
+
+| Audience | What it means |
+|---|---|
+| **CHW supervisor** | This child has 3 outstanding doses *and* is in a critical age window — two independent reasons for concern. The waterfall shows exactly which factors are driving the flag, so the CHW can have a targeted conversation with the caregiver rather than a generic reminder. |
+| **MOH programme manager** | A 99.7% risk score means fewer than 1 in 300 children with this profile are on-track. Immediate action is warranted. This child should appear at the top of the CHW's daily priority list. |
+| **Technical reviewer** | Waterfall values are additive SHAP contributions in log-odds space, transformed to probability by the calibrated model. The sum of all SHAP values plus the base value equals the final log-odds of the prediction. |
+
+---
+
 ### Per-Patient Waterfall: MEDIUM Risk (60.0%)
 
 ![MEDIUM Risk Waterfall](reports/shap/waterfall_medium_example.png)
 
+**What you are looking at:** A child where risk factors and protective factors partially offset each other, producing a 60% probability — above the medium threshold (33%) but below the high threshold (60%).
+
+| Audience | What it means |
+|---|---|
+| **CHW supervisor** | This child is not yet in crisis but is trending toward missed vaccines. The waterfall shows the key vulnerability — schedule the next home visit within the month before the situation escalates. |
+| **MOH programme manager** | Medium-risk children are the largest intervention opportunity. They are still accessible and reachable, and a single timely CHW visit can shift them to low risk before any doses are missed. |
+
+---
+
 ### Per-Patient Waterfall: LOW Risk (33.0%)
 
 ![LOW Risk Waterfall](reports/shap/waterfall_low_example.png)
+
+**What you are looking at:** A child whose features — recent CHW contact, completed Penta series, appropriate age — combine to produce a score just at the low/medium boundary (33.0%).
+
+| Audience | What it means |
+|---|---|
+| **CHW supervisor** | This child does not need an immediate visit. Routine follow-up at the next scheduled cycle is sufficient. The blue bars (protective factors) confirm the child is broadly on-track. |
+| **MOH programme manager** | Low-risk children free up CHW capacity for the high and medium tiers. The model enables resource reallocation without de-prioritising any child entirely — low-risk patients still receive routine visits, just not urgent ones. |
 
 ---
 
